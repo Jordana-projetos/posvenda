@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acompanhamento de Vendas Pós-Venda</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .filter-input {
+            appearance: none;
+        }
+        .filter-input::-webkit-inner-spin-button,
+        .filter-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-7xl">
+
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-bold text-[#00A1E4]">Acompanhamento de Vendas Pós-Venda</h1>
+            <p class="text-xl text-gray-600 mt-2">Gestão Detalhada das Atividades e Recebimentos</p>
+            <p class="text-sm text-gray-500 mt-2">ID do Usuário: <span id="userIdDisplay">Carregando...</span></p>
+        </header>
+
+        <nav class="mb-8 flex justify-center space-x-4">
+            <button id="showDetailedView" class="px-6 py-3 rounded-lg shadow-md bg-[#00A1E4] text-white hover:bg-[#33BFE8] transition-colors font-semibold">Acompanhamento Detalhado</button>
+            <button id="showSummaryView" class="px-6 py-3 rounded-lg shadow-md bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors font-semibold">Resumo Financeiro</button>
+        </nav>
+
+        <section id="detailedView" class="bg-white p-6 rounded-xl shadow-md mb-8">
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Detalhes das Atividades de Pós-Venda</h2>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-gray-600">
+                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
+                        <tr>
+                            <th scope="col" class="px-3 py-3">
+                                Data
+                                <input type="date" id="filterDate" class="block w-full p-1 text-xs border border-gray-300 rounded mt-1 filter-input">
+                            </th>
+                            <th scope="col" class="px-3 py-3">
+                                Cliente
+                                <input type="text" id="filterClient" placeholder="Filtrar..." class="block w-full p-1 text-xs border border-gray-300 rounded mt-1 filter-input">
+                            </th>
+                            <th scope="col" class="px-3 py-3">
+                                Tipo de Atividade
+                                <input type="text" id="filterActivityType" placeholder="Filtrar..." class="block w-full p-1 text-xs border border-gray-300 rounded mt-1 filter-input">
+                            </th>
+                            <th scope="col" class="px-3 py-3">
+                                Descrição
+                                <input type="text" id="filterDescription" placeholder="Filtrar..." class="block w-full p-1 text-xs border border-gray-300 rounded mt-1 filter-input">
+                            </th>
+                            <th scope="col" class="px-3 py-3 text-right">
+                                Valor Cobrado (R$)
+                                <input type="number" id="filterValue" placeholder="Filtrar..." class="block w-full p-1 text-xs border border-gray-300 rounded mt-1 filter-input">
+                            </th>
+                            <th scope="col" class="px-3 py-3">
+                                Status Pagamento
+                                <select id="filterStatus" class="block w-full p-1 text-xs border border-gray-300 rounded mt-1 filter-input">
+                                    <option value="">Todos</option>
+                                    <option value="Pago">Pago</option>
+                                    <option value="Pendente">Pendente</option>
+                                    <option value="Não Cobrado">Não Cobrado</option>
+                                    <option value="Não Aplicável">Não Aplicável</option>
+                                </select>
+                            </th>
+                            <th scope="col" class="px-3 py-3">
+                                Data Pagamento
+                                <input type="date" id="filterPaymentDate" class="block w-full p-1 text-xs border border-gray-300 rounded mt-1 filter-input">
+                            </th>
+                            <th scope="col" class="px-3 py-3">
+                                Observações
+                                <input type="text" id="filterObservations" placeholder="Filtrar..." class="block w-full p-1 text-xs border border-gray-300 rounded mt-1 filter-input">
+                            </th>
+                            <th scope="col" class="px-3 py-3 text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody">
+                        <!-- Os dados serão preenchidos via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <button id="addNewEntryButton" class="mt-6 px-6 py-3 rounded-lg shadow-md bg-[#F7B733] text-white hover:bg-[#FC4A1A] transition-colors font-semibold">Adicionar Nova Entrada</button>
+
+            <!-- Modal para Adicionar/Editar Entrada -->
+            <div id="entryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
+                    <h3 class="text-xl font-bold mb-4" id="modalTitle">Adicionar Nova Entrada</h3>
+                    <form id="entryForm">
+                        <div class="mb-4">
+                            <label for="modalDate" class="block text-gray-700 text-sm font-bold mb-2">Data da Atividade:</label>
+                            <input type="date" id="modalDate" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="modalClient" class="block text-gray-700 text-sm font-bold mb-2">Nome do Cliente:</label>
+                            <input type="text" id="modalClient" placeholder="Nome do Cliente" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" required>
+                        </div>
+                        <div class="mb-4">
+                            <label for="modalActivityType" class="block text-gray-700 text-sm font-bold mb-2">Tipo de Atividade:</label>
+                            <input type="text" id="modalActivityType" placeholder="Manutenção, Visita Técnica, etc." class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div class="mb-4">
+                            <label for="modalDescription" class="block text-gray-700 text-sm font-bold mb-2">Descrição Detalhada:</label>
+                            <textarea id="modalDescription" placeholder="Detalhes da atividade" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label for="modalValue" class="block text-gray-700 text-sm font-bold mb-2">Valor Cobrado (R$):</label>
+                            <input type="number" id="modalValue" step="0.01" placeholder="0.00" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div class="mb-4">
+                            <label for="modalStatus" class="block text-gray-700 text-sm font-bold mb-2">Status do Pagamento:</label>
+                            <select id="modalStatus" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                                <option value="Pendente">Pendente</option>
+                                <option value="Pago">Pago</option>
+                                <option value="Não Cobrado">Não Cobrado</option>
+                                <option value="Não Aplicável">Não Aplicável</option>
+                            </select>
+                        </div>
+                        <div class="mb-4">
+                            <label for="modalPaymentDate" class="block text-gray-700 text-sm font-bold mb-2">Data do Pagamento:</label>
+                            <input type="date" id="modalPaymentDate" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        </div>
+                        <div class="mb-6">
+                            <label for="modalObservations" class="block text-gray-700 text-sm font-bold mb-2">Observações:</label>
+                            <textarea id="modalObservations" placeholder="Notas adicionais" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"></textarea>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <button type="submit" class="bg-[#00A1E4] hover:bg-[#33BFE8] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Salvar</button>
+                            <button type="button" id="closeModal" class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </section>
+
+        <section id="summaryView" class="bg-white p-6 rounded-xl shadow-md hidden">
+            <h2 class="text-2xl font-bold text-center mb-6 text-gray-700">Resumo Financeiro de Pós-Venda</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                <div class="bg-blue-50 p-6 rounded-xl shadow-sm border-b-4 border-[#00A1E4]">
+                    <p class="text-sm font-semibold text-gray-500 uppercase">Total Geral Cobrado</p>
+                    <p class="text-3xl font-bold text-[#00A1E4]" id="totalCharged">R$ 0,00</p>
+                </div>
+                <div class="bg-green-50 p-6 rounded-xl shadow-sm border-b-4 border-green-500">
+                    <p class="text-sm font-semibold text-gray-500 uppercase">Total Recebido (Pago)</p>
+                    <p class="text-3xl font-bold text-green-600" id="totalPaid">R$ 0,00</p>
+                </div>
+                <div class="bg-yellow-50 p-6 rounded-xl shadow-sm border-b-4 border-yellow-500">
+                    <p class="text-sm font-semibold text-gray-500 uppercase">Total a Receber (Pendente)</p>
+                    <p class="text-3xl font-bold text-yellow-600" id="totalPending">R$ 0,00</p>
+                </div>
+            </div>
+            <p class="text-center text-gray-600 mt-8">Os valores são atualizados com base nos dados na aba "Acompanhamento Detalhado".</p>
+        </section>
+
+        <footer class="text-center mt-12 py-6 border-t">
+            <p class="text-gray-600">Desenvolvido por BGC Energia Solar.</p>
+            <p class="text-gray-500 text-sm">Para dúvidas, entre em contato.</p>
+        </footer>
+
+    </div>
+
+    <script type="module">
+        // Importar módulos do Firebase (versão 9 modular)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, onSnapshot, addDoc, doc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Variáveis globais fornecidas pelo ambiente Canvas
+        const appId = typeof __app_id !== 'undefined' ? __app_id : ' acompanhamento-pos-venda';
+        const firebaseConfig = {
+  apiKey: "AIzaSyBW4eUC0gExE_6LPS38N68dHZcvR4FyMbI",
+  authDomain: "acompanhamento-pos-venda.firebaseapp.com",
+  projectId: "acompanhamento-pos-venda",
+  storageBucket: "acompanhamento-pos-venda.firebasestorage.app",
+  messagingSenderId: "826482667367",
+  appId: "1:826482667367:web:bd12d88c0530d47ea209c2",
+  measurementId: "G-ZYPNLL8WWJ"
+};        
+const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Inicializar Firebase
+        let app;
+        let db;
+        let auth;
+        let currentUserId = null;
+        let postSaleData = []; // Array para armazenar os dados carregados do Firestore
+
+        // Referências aos elementos do DOM
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const dataTableBody = document.getElementById('dataTableBody');
+        const filterInputs = document.querySelectorAll('thead input, thead select');
+        const showDetailedViewButton = document.getElementById('showDetailedView');
+        const showSummaryViewButton = document.getElementById('showSummaryView');
+        const detailedView = document.getElementById('detailedView');
+        const summaryView = document.getElementById('summaryView');
+        const addNewEntryButton = document.getElementById('addNewEntryButton');
+        const entryModal = document.getElementById('entryModal');
+        const closeModalButton = document.getElementById('closeModal');
+        const entryForm = document.getElementById('entryForm');
+        const modalTitle = document.getElementById('modalTitle');
+
+        const modalDate = document.getElementById('modalDate');
+        const modalClient = document.getElementById('modalClient');
+        const modalActivityType = document.getElementById('modalActivityType');
+        const modalDescription = document.getElementById('modalDescription');
+        const modalValue = document.getElementById('modalValue');
+        const modalStatus = document.getElementById('modalStatus');
+        const modalPaymentDate = document.getElementById('modalPaymentDate');
+        const modalObservations = document.getElementById('modalObservations');
+
+        let editingDocId = null; // Armazena o ID do documento Firestore que está sendo editado
+
+        // Objeto para armazenar os filtros atuais
+        let currentFilters = {
+            date: '',
+            client: '',
+            activityType: '',
+            description: '',
+            value: '',
+            status: '',
+            paymentDate: '',
+            observations: ''
+        };
+
+        // --- Funções Firebase ---
+        async function initializeFirebase() {
+            try {
+                if (Object.keys(firebaseConfig).length === 0) {
+                    console.error("Firebase config não fornecida. Certifique-se de que a aplicação está a ser executada num ambiente Canvas.");
+                    // Pode adicionar uma mensagem UI para o utilizador aqui.
+                    return;
+                }
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Autenticar o utilizador
+                onAuthStateChanged(auth, async (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        userIdDisplay.textContent = currentUserId;
+                        console.log("Usuário autenticado:", currentUserId);
+                        startFirestoreListener(); // Inicia o listener de dados após a autenticação
+                    } else {
+                        // Tentar autenticar anonimamente ou com token personalizado
+                        try {
+                            if (initialAuthToken) {
+                                await signInWithCustomToken(auth, initialAuthToken);
+                            } else {
+                                await signInAnonymously(auth);
+                            }
+                        } catch (error) {
+                            console.error("Erro na autenticação:", error);
+                            userIdDisplay.textContent = "Erro de Autenticação";
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error("Erro ao inicializar Firebase:", e);
+                userIdDisplay.textContent = "Erro de Inicialização";
+            }
+        }
+
+        // Inicia o listener de dados em tempo real do Firestore
+        function startFirestoreListener() {
+            if (!db || !currentUserId) {
+                console.warn("Firestore ou User ID não estão prontos para iniciar o listener.");
+                return;
+            }
+
+            // Caminho da coleção para dados privados do utilizador
+            const colRef = collection(db, `artifacts/${appId}/users/${currentUserId}/pos_venda_acompanhamento`);
+            const q = query(colRef);
+
+            onSnapshot(q, (snapshot) => {
+                const newPostSaleData = [];
+                snapshot.forEach(doc => {
+                    newPostSaleData.push({ id: doc.id, ...doc.data() });
+                });
+                postSaleData = newPostSaleData;
+                renderTable(); // Re-renderiza a tabela com os novos dados
+            }, (error) => {
+                console.error("Erro ao ouvir dados do Firestore:", error);
+                // Pode exibir uma mensagem de erro na UI
+            });
+        }
+
+        // Adicionar ou atualizar dados no Firestore
+        async function saveEntry(itemData, docId = null) {
+            if (!db || !currentUserId) {
+                console.error("Firestore ou User ID não estão prontos para salvar.");
+                return;
+            }
+            try {
+                const colRef = collection(db, `artifacts/${appId}/users/${currentUserId}/pos_venda_acompanhamento`);
+                if (docId) {
+                    // Atualizar documento existente
+                    const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/pos_venda_acompanhamento`, docId);
+                    await updateDoc(docRef, itemData);
+                    console.log("Documento atualizado com sucesso:", docId);
+                } else {
+                    // Adicionar novo documento
+                    const newDocRef = await addDoc(colRef, itemData);
+                    console.log("Novo documento adicionado com ID:", newDocRef.id);
+                }
+            } catch (e) {
+                console.error("Erro ao salvar dados no Firestore:", e);
+                // Lidar com o erro na UI
+            }
+        }
+
+        // Excluir dados do Firestore
+        async function deleteEntry(docId) {
+            if (!db || !currentUserId) {
+                console.error("Firestore ou User ID não estão prontos para excluir.");
+                return;
+            }
+            try {
+                const docRef = doc(db, `artifacts/${appId}/users/${currentUserId}/pos_venda_acompanhamento`, docId);
+                await deleteDoc(docRef);
+                console.log("Documento excluído com sucesso:", docId);
+            } catch (e) {
+                console.error("Erro ao excluir dados do Firestore:", e);
+                // Lidar com o erro na UI
+            }
+        }
+
+        // --- Funções Utilitárias ---
+        function formatDateDisplay(dateString) {
+            if (!dateString) return '';
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        }
+
+        function formatCurrency(value) {
+            return value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+        }
+
+        // --- Funções de Renderização e Atualização ---
+        function renderTable() {
+            dataTableBody.innerHTML = '';
+            const filteredData = postSaleData.filter(item => {
+                const dateMatch = currentFilters.date ? item.date.includes(currentFilters.date) : true;
+                const clientMatch = currentFilters.client ? item.client.toLowerCase().includes(currentFilters.client.toLowerCase()) : true;
+                const activityTypeMatch = currentFilters.activityType ? item.activityType.toLowerCase().includes(currentFilters.activityType.toLowerCase()) : true;
+                const descriptionMatch = currentFilters.description ? item.description.toLowerCase().includes(currentFilters.description.toLowerCase()) : true;
+                const valueMatch = currentFilters.value === '' || item.value === parseFloat(currentFilters.value);
+                const statusMatch = currentFilters.status ? item.status === currentFilters.status : true;
+                const paymentDateMatch = currentFilters.paymentDate ? item.paymentDate.includes(currentFilters.paymentDate) : true;
+                const observationsMatch = currentFilters.observations ? item.observations.toLowerCase().includes(currentFilters.observations.toLowerCase()) : true;
+
+                return dateMatch && clientMatch && activityTypeMatch && descriptionMatch && valueMatch && statusMatch && paymentDateMatch && observationsMatch;
+            });
+
+            filteredData.forEach(item => {
+                let rowClass = 'bg-white';
+                let valueClass = 'text-gray-900';
+                let statusBadgeClass = '';
+
+                switch (item.status) {
+                    case 'Pago':
+                        rowClass = 'bg-green-50';
+                        statusBadgeClass = 'bg-green-200 text-green-800';
+                        valueClass = 'text-green-700 font-semibold';
+                        break;
+                    case 'Pendente':
+                        rowClass = 'bg-yellow-50';
+                        statusBadgeClass = 'bg-yellow-200 text-yellow-800';
+                        valueClass = 'text-yellow-700 font-semibold';
+                        break;
+                    case 'Não Cobrado':
+                    case 'Não Aplicável':
+                        rowClass = 'bg-gray-50';
+                        statusBadgeClass = 'bg-gray-200 text-gray-800';
+                        valueClass = 'text-gray-500';
+                        break;
+                }
+
+                const row = `
+                    <tr class="${rowClass} border-b hover:bg-gray-100 transition-colors">
+                        <td class="px-3 py-3">${formatDateDisplay(item.date)}</td>
+                        <td class="px-3 py-3">${item.client}</td>
+                        <td class="px-3 py-3">${item.activityType}</td>
+                        <td class="px-3 py-3">${item.description}</td>
+                        <td class="px-3 py-3 text-right ${valueClass}">${formatCurrency(item.value)}</td>
+                        <td class="px-3 py-3 text-center"><span class="inline-block px-2 py-1 text-xs font-semibold rounded-full ${statusBadgeClass}">${item.status}</span></td>
+                        <td class="px-3 py-3">${formatDateDisplay(item.paymentDate)}</td>
+                        <td class="px-3 py-3">${item.observations}</td>
+                        <td class="px-3 py-3 text-center whitespace-nowrap">
+                            <button data-id="${item.id}" class="edit-btn text-blue-600 hover:text-blue-800 font-semibold mr-2">Editar</button>
+                            <button data-id="${item.id}" class="delete-btn text-red-600 hover:text-red-800 font-semibold">Excluir</button>
+                        </td>
+                    </tr>
+                `;
+                dataTableBody.innerHTML += row;
+            });
+
+            addEventListenersToButtons();
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const totalCharged = postSaleData.reduce((sum, item) => sum + item.value, 0);
+            const totalPaid = postSaleData.filter(item => item.status === 'Pago').reduce((sum, item) => sum + item.value, 0);
+            const totalPending = postSaleData.filter(item => item.status === 'Pendente').reduce((sum, item) => sum + item.value, 0);
+
+            document.getElementById('totalCharged').textContent = formatCurrency(totalCharged);
+            document.getElementById('totalPaid').textContent = formatCurrency(totalPaid);
+            document.getElementById('totalPending').textContent = formatCurrency(totalPending);
+        }
+
+        // --- Event Listeners para Interatividade ---
+        filterInputs.forEach(input => {
+            input.addEventListener('input', (e) => {
+                const column = e.target.id.replace('filter', '').toLowerCase();
+                currentFilters[column] = e.target.value;
+                renderTable();
+            });
+        });
+
+        showDetailedViewButton.addEventListener('click', () => {
+            detailedView.classList.remove('hidden');
+            summaryView.classList.add('hidden');
+            showDetailedViewButton.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            showDetailedViewButton.classList.add('bg-[#00A1E4]', 'text-white', 'hover:bg-[#33BFE8]');
+            showSummaryViewButton.classList.remove('bg-[#00A1E4]', 'text-white', 'hover:bg-[#33BFE8]');
+            showSummaryViewButton.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+        });
+
+        showSummaryViewButton.addEventListener('click', () => {
+            detailedView.classList.add('hidden');
+            summaryView.classList.remove('hidden');
+            showSummaryViewButton.classList.remove('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            showSummaryViewButton.classList.add('bg-[#00A1E4]', 'text-white', 'hover:bg-[#33BFE8]');
+            showDetailedViewButton.classList.remove('bg-[#00A1E4]', 'text-white', 'hover:bg-[#33BFE8]');
+            showDetailedViewButton.classList.add('bg-gray-200', 'text-gray-700', 'hover:bg-gray-300');
+            updateSummary();
+        });
+
+        addNewEntryButton.addEventListener('click', () => {
+            modalTitle.textContent = 'Adicionar Nova Entrada';
+            entryForm.reset();
+            editingDocId = null;
+            modalStatus.value = 'Pendente';
+            entryModal.classList.remove('hidden');
+        });
+
+        closeModalButton.addEventListener('click', () => {
+            entryModal.classList.add('hidden');
+        });
+
+        entryForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const itemData = {
+                date: modalDate.value,
+                client: modalClient.value,
+                activityType: modalActivityType.value,
+                description: modalDescription.value,
+                value: parseFloat(modalValue.value) || 0,
+                status: modalStatus.value,
+                paymentDate: modalPaymentDate.value,
+                observations: modalObservations.value
+            };
+
+            await saveEntry(itemData, editingDocId);
+            entryModal.classList.add('hidden');
+            // A renderTable() será chamada automaticamente pelo onSnapshot do Firestore
+        });
+
+        function addEventListenersToButtons() {
+            document.querySelectorAll('.edit-btn').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const docId = e.target.dataset.id;
+                    editingDocId = docId;
+                    const itemToEdit = postSaleData.find(item => item.id === docId);
+
+                    if (itemToEdit) {
+                        modalTitle.textContent = 'Editar Entrada';
+                        modalDate.value = itemToEdit.date;
+                        modalClient.value = itemToEdit.client;
+                        modalActivityType.value = itemToEdit.activityType;
+                        modalDescription.value = itemToEdit.description;
+                        modalValue.value = itemToEdit.value;
+                        modalStatus.value = itemToEdit.status;
+                        modalPaymentDate.value = itemToEdit.paymentDate;
+                        modalObservations.value = itemToEdit.observations;
+                        entryModal.classList.remove('hidden');
+                    }
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', async (e) => {
+                    const docId = e.target.dataset.id;
+                    // Em uma aplicação real, você mostraria uma confirmação de diálogo personalizada aqui
+                    if (confirm('Tem certeza que deseja excluir esta entrada?')) {
+                        await deleteEntry(docId);
+                        // A renderTable() será chamada automaticamente pelo onSnapshot do Firestore
+                    }
+                });
+            });
+        }
+
+        // --- Inicialização da Aplicação ---
+        initializeFirebase(); // Inicia o processo de autenticação e carregamento de dados
+    </script>
+</body>
+</html>
+
